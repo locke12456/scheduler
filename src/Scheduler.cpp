@@ -11,13 +11,13 @@ Scheduler::Scheduler() : _tasks(NULL), _task_list(NULL) ,_pending(), _mutex()
 	_task_list = new TaskQueue(MAX_TASK);
 
 	for (int i = MIN_TASK; i > 0;i--)
-		_task_list->push(new Task(NULL, ITask::Time(1)));
+		_task_list->push(new ThreadTask(NULL, ITask::Time(1)));
 }                             
                               
                               
 Scheduler::~Scheduler()   
 {      
-	Task * task = NULL;
+	ThreadTask * task = NULL;
 	while (_tasks->pop(task))delete task;
 	while (_task_list->pop(task))delete task;
 	TaskList tasks = _pending;
@@ -32,7 +32,7 @@ Scheduler::~Scheduler()
 bool Scheduler::RunAllTask()
 {
 	guard lock(_mutex);
-	Task * task = NULL;
+	ThreadTask * task = NULL;
 	while (_tasks->pop(task)){
 		task->DoTask();
 		_pending.push_back(task);
@@ -45,9 +45,9 @@ void Scheduler::RecoveryTask()
 	guard lock(_mutex);
 	TaskList tasks = _pending;
 	//int index = 0;
-	boost::hash<Task *> hashher;
+	boost::hash<ThreadTask *> hashher;
 	//size_t index;
-	FOREACH(Task * task, tasks)
+	FOREACH(ThreadTask * task, tasks)
 	{
 #ifdef TRACE
 		index = hashher(task);
@@ -70,28 +70,28 @@ void Scheduler::RecoveryTask()
 void Scheduler::addTask(ITask::Task task, ITask::Time time)
 {
 	guard lock(_mutex);
-	Task * get_task;
+	ThreadTask * get_task;
 	if (_task_list->pop(get_task))
 	{
 		get_task->SetTask(task, time);
 		_tasks->push(get_task);
 	}
 	else {		
-		_tasks->push(new Task(task, time));
+		_tasks->push(new ThreadTask(task, time));
 #ifdef TRACE
 		std::cout << "tasking : " <<_pending.size() << std::endl;
 #endif
 	}
 	
 	//else
-	//	_tasks->push( new Task(task, time) );
+	//	_tasks->push( new ThreadTask(task, time) );
 }
 
 void Scheduler::cancelAllTask()
 {
 	guard lock(_mutex);
 	TaskList tasks = _pending;
-	FOREACH(Task * task, tasks)
+	FOREACH(ThreadTask * task, tasks)
 	{
 		task->StopTask();
 		_pending.remove(task);

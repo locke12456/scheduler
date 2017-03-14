@@ -19,11 +19,11 @@ public:
 private:
 
 	typedef boost::lock_guard<boost::mutex> guard;
-	typedef boost::shared_ptr<Task> Task;
-	ITask* _generator(Task::Task);
+	typedef boost::shared_ptr<ThreadTask> Task;
+	ITask* _generator(ITask::Task);
 	virtual void _cancel(ITask*);
-	typedef boost::lockfree::queue< Task * > TaskQueue;
-	typedef std::list< Task * > TaskList;
+	typedef boost::lockfree::queue< ThreadTask * > TaskQueue;
+	typedef std::list< ThreadTask * > TaskList;
 	boost::mutex		_mutex;
 	TaskQueue*			_tasks;
 	TaskQueue*			_task_list;
