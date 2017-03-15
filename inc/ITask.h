@@ -15,8 +15,8 @@ public:
 	typedef boost::posix_time::hours Hours;
 	typedef Seconds Time;
 	virtual ~ITask(){};
-	virtual bool DoTask() = 0;
-	virtual bool StopTask() = 0;
+	virtual bool Start() = 0;
+	virtual bool Stop() = 0;
 	virtual bool isTasking() = 0;
 	virtual bool isFinished() = 0;
 };                                             

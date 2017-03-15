@@ -34,7 +34,7 @@ bool Scheduler::RunAllTask()
 	guard lock(_mutex);
 	ThreadTask * task = NULL;
 	while (_tasks->pop(task)){
-		task->DoTask();
+		task->Start();
 		_pending.push_back(task);
 	}
 	return true;
@@ -91,7 +91,7 @@ void Scheduler::cancelAllTask()
 	TaskList tasks = _pending;
 	FOREACH(ThreadTask * task, tasks)
 	{
-		task->StopTask();
+		task->Stop();
 		_pending.remove(task);
 		_task_list->push(task);
 	}
@@ -107,5 +107,5 @@ void Scheduler::cancelTask(ITask* job)
 
 void Scheduler::_cancel(ITask* job)
 {
-	job->StopTask();
+	job->Stop();
 }

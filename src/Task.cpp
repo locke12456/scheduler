@@ -22,7 +22,7 @@ ThreadTask::~ThreadTask()
 			
 			if (_worker->joinable()){
 				_thread_ready = false;
-				StopTask();
+				Stop();
 				_worker->join(); 
 			}
 		}
@@ -38,7 +38,7 @@ ThreadTask::~ThreadTask()
 	}
 }    
 
-bool ThreadTask::DoTask()
+bool ThreadTask::Start()
 {
 	if (_tasking)return false;
 	_wait.notify_one();
@@ -55,7 +55,7 @@ bool ThreadTask::SetTask(ITask::Task task, ITask::Time time)
 
 	return true;
 }
-bool ThreadTask::StopTask()
+bool ThreadTask::Stop()
 {
 	_finished = true;
 	_tasking = false;
@@ -99,9 +99,11 @@ void ThreadTask::_worker_thread()
 {
 	Mutex time_mutex;
 	Lock lock(_mutex);
+	// prepare thread state
 	Lock time_lock(time_mutex);
 	_thread_ready = true;
 	_wait_thread_ready.notify_all();
+	// thread is ready
 	do{
 		//finished
 		_finished = true;

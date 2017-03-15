@@ -11,8 +11,8 @@ public:
 	ThreadTask(ITask::Task, ITask::Time);
 	~ThreadTask();   
 	bool SetTask(ITask::Task task, ITask::Time time);
-	virtual bool DoTask();
-	virtual bool StopTask();
+	virtual bool Start();
+	virtual bool Stop();
 	virtual bool isTasking();
 	virtual bool isFinished();
 protected:
