@@ -50,7 +50,7 @@ void Scheduler::RecoveryTask()
 	FOREACH(ThreadTask * task, tasks)
 	{
 #ifdef TRACE
-		index = hashher(task);
+		auto index = hashher(task);
 		std::cout << "index : "<< index <<" , task status : " << ( task->isFinished() ?"finished" : "running" ) << std::endl;
 #endif
 		if (NULL != task && task->isFinished())
