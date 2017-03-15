@@ -146,7 +146,7 @@ class TestSuite(object):
             module_root = root[len(self.path):]
             module_root = [c for c in module_root.split(os.sep) if c]
 
-            tests_in_module = fnmatch.filter(files, "*.c")
+            tests_in_module = fnmatch.filter(files, "*.cpp")
 
             for test_file in tests_in_module:
                 full_path = os.path.join(root, test_file)
