@@ -1,3 +1,6 @@
 [submodule "boost-1.59-cross-platfrom"]
 	path = boost-1.59-cross-platfrom
 	url = git@github.com:locke12456/boost-1.59-cross-platfrom.git
+[submodule "clar"]
+	path = clar
+	url = git@github.com:vmg/clar.git
