@@ -4,7 +4,8 @@
 #include <boost/function.hpp>
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-class ITask    
+#include "DLL_Export.h"
+class DLL_EXPORT ITask
 {                                              
 public:  
 	typedef boost::thread Worker;

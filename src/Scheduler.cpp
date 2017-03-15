@@ -83,8 +83,6 @@ void Scheduler::addTask(ITask::Task task, ITask::Time time)
 #endif
 	}
 	
-	//else
-	//	_tasks->push( new ThreadTask(task, time) );
 }
 
 void Scheduler::cancelAllTask()

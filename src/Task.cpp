@@ -29,6 +29,7 @@ ThreadTask::~ThreadTask()
 	}
 	catch (std::exception &error)
 	{
+		// TODO : implement exception handler
 		std::cout << "Error : " << error.what() << std::endl;
 	}
 	catch (...)
@@ -92,7 +93,8 @@ void ThreadTask::_exception_handler()
 	if (_thread_stop)
 		throw(std::runtime_error("thread_stop"));
 }
-
+// TODO : change to meta state machine
+// http://www.boost.org/doc/libs/1_57_0/libs/msm/doc/HTML/ch03s02.html#d0e419
 void ThreadTask::_worker_thread()
 {
 	Mutex time_mutex;
@@ -101,33 +103,39 @@ void ThreadTask::_worker_thread()
 	_thread_ready = true;
 	_wait_thread_ready.notify_all();
 	do{
+		//finished
 		_finished = true;
 		_tasking = false;
+		// continue
 		_wait.wait(lock);
+		// start
 		try{
-		
 			double time = static_cast<double>(_time.total_seconds());
 			long wait_time = static_cast<long>(time * 1000);
 			boost::this_thread::sleep(boost::posix_time::milliseconds(wait_time));
 			try{
-				if (!_thread_stop){
-					_do_task();
+				if (!_thread_stop){ // true : cancel
+					//started
+					_do_task(); // exception : abort
+					//finish
 				}
 			}
-			catch ( std::exception & abort )
+			catch ( std::exception & abort ) //aborted
 			{
+				// TODO : implement exception handler
 				std::cout << "task aborted : " << abort.what()  << std::endl;
 			}
 			
 		}
 		catch (std::exception &error)
 		{
+			// TODO : implement exception handler
 			std::cout << "Error : " << error.what() << std::endl;
 		}
 		catch (...)
 		{
 			std::cout << "unknow error" << std::endl;
 		}
-	
+		// TODO : implement recovery all resources if task cancel or abort.
 	} while (_thread_ready);
 }
