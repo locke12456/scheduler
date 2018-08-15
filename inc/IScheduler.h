@@ -5,7 +5,8 @@ class IScheduler
 {                                              
 public:      
 	virtual ~IScheduler(){};
-	virtual void addTask(ITask::Task task, ITask::Time) = 0;
+	virtual ITask& addTask(ITask::Task task, ITask::Time) = 0;
+	virtual void removeTask(ITask& task) = 0;
 	virtual bool RunAllTask() = 0;
 	virtual void RecoveryTask() = 0;
 	virtual void cancelAllTask() = 0;

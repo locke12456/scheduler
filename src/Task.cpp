@@ -1,29 +1,30 @@
 #include "Task.h"  
 #include <boost/bind.hpp>
+using namespace Utility;
 ThreadTask::ThreadTask(ITask::Task task, ITask::Time time) :
 	_task(task)			,
 	_tasking(false)  , _finished(false),
 	_time(time),
 	_wait(),
 	_thread_mutex(), _mutex(),
-	_thread_ready(false), _thread_stop(false), _thread_terminate(false),
-	_worker()
+	_thread_ready(false), _thread_stop(false), _thread_terminated(false),
+	_worker(), _status()
 {   
 	Lock lock(_thread_mutex);
+	_status.Initialize();
 	_worker = boost::shared_ptr<Worker>(new Worker(boost::bind(&ThreadTask::_worker_thread, this)));
 	if (!_thread_ready)
+	//if (_status.GetState().GetIndex() != typeid(TaskStatus::Ready))
 		_wait_thread_ready.wait(lock);
 }                                                        
                               
 ThreadTask::~ThreadTask()   
 {
 	try{
-		if (_worker.get()){
+		if (!_thread_terminated && _worker.get()){
 			
 			if (_worker->joinable()){
-				_thread_ready = false;
-				Stop();
-				_worker->join(); 
+				Destroy();
 			}
 		}
 	}
@@ -40,13 +41,15 @@ ThreadTask::~ThreadTask()
 
 bool ThreadTask::Start()
 {
-	if (_tasking)return false;
+	if (_status.GetState().GetIndex() == typeid(TaskStatus::Running))return false;
+	_status.SetState(typeid(TaskStatus::Start));
 	_wait.notify_one();
 	_tasking = true;
 	return true;
 }
 bool ThreadTask::SetTask(ITask::Task task, ITask::Time time)
 {
+	if (_thread_terminated)return false;
 	_time = time;
 	_task = task;
 	_finished = false;
@@ -62,17 +65,33 @@ bool ThreadTask::Stop()
 	_thread_stop = true;
 	_time = Time(0);
 	_wait.notify_all();
+	if (_status.GetState().GetIndex() == typeid(TaskStatus::Running) && _worker->joinable()) {
+		_status.SetState(typeid(TaskStatus::Stop));
+		_worker->interrupt();
+	}
+	return true;
+}
+
+bool ThreadTask::Destroy()
+{
+	Stop();
+	if (_worker->joinable()) {
+		_status.SetState(typeid(TaskStatus::Destroy));
+		_worker->interrupt();
+		_worker->join();
+		_status.SetState(typeid(TaskStatus::Terminated));
+	}
 	return true;
 }
 
 bool ThreadTask::isTasking()
 {
-	return _tasking;
+	return _status.GetState().GetIndex() == typeid(TaskStatus::Running);
 }
 
 bool ThreadTask::isFinished()
 {
-	return _finished;
+	return _status.GetState().GetIndex() == typeid(TaskStatus::Idle);
 }
 
 void ThreadTask::_do_task()
@@ -102,12 +121,12 @@ void ThreadTask::_worker_thread()
 	// prepare thread state
 	Lock time_lock(time_mutex);
 	_thread_ready = true;
+	_status.SetState(typeid(TaskStatus::Ready));
 	_wait_thread_ready.notify_all();
 	// thread is ready
 	do{
 		//finished
-		_finished = true;
-		_tasking = false;
+		_status.SetState(typeid(TaskStatus::Idle));
 		// continue
 		_wait.wait(lock);
 		// start
@@ -116,18 +135,26 @@ void ThreadTask::_worker_thread()
 			long wait_time = static_cast<long>(time * 1000);
 			boost::this_thread::sleep(boost::posix_time::milliseconds(wait_time));
 			try{
+				_status.SetState(typeid(TaskStatus::Running));
 				if (!_thread_stop){ // true : cancel
 					//started
 					_do_task(); // exception : abort
 					//finish
 				}
+				_status.SetState(typeid(TaskStatus::Stopped));
 			}
-			catch ( std::exception & abort ) //aborted
+			catch ( boost::thread_interrupted & interrupted ) //aborted
+			{
+				std::cout << "task interrupted .. " << std::endl;
+				_task = NULL;
+				if(_status.GetState().GetIndex() == typeid(TaskStatus::Destroy))
+					break;
+			}
+			catch (std::exception & abort) //aborted
 			{
 				// TODO : implement exception handler
-				std::cout << "task aborted : " << abort.what()  << std::endl;
+				std::cout << "task aborted : " << abort.what() << std::endl;
 			}
-			
 		}
 		catch (std::exception &error)
 		{
@@ -140,4 +167,5 @@ void ThreadTask::_worker_thread()
 		}
 		// TODO : implement recovery all resources if task cancel or abort.
 	} while (_thread_ready);
+	_thread_terminated = true;
 }

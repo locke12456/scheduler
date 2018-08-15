@@ -17,6 +17,7 @@ public:
 	virtual ~ITask(){};
 	virtual bool Start() = 0;
 	virtual bool Stop() = 0;
+	virtual bool Destroy() = 0;
 	virtual bool isTasking() = 0;
 	virtual bool isFinished() = 0;
 };                                             
